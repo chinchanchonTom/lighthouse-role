@@ -16,7 +16,7 @@ Including an example of how to use your role (for instance, with variables passe
 
     - hosts: lighthouse
       roles:
-         - { role: lighthouse-role }
+        - { role: lighthouse-role }
 
 License
 -------
