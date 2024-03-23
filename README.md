@@ -26,4 +26,4 @@ MIT
 Author Information
 ------------------
 
-Maxim Besedkin
+Maxim Besedkin v1.0.0
