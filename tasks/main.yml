@@ -1,0 +1,47 @@
+---
+- name: Add repo
+  become: true
+  yum:
+    name: epel-release
+    state: present
+- name: Install Nginx and Git
+  become: true
+  ansible.builtin.yum:
+    name: nginx, git
+    state: present
+- name: web-server systemd start 
+  become: true
+  ansible.builtin.systemd:
+    name: nginx
+    enabled: true
+    state: started
+- name: Check lighthouse config
+  register: lh_exists
+  ansible.builtin.file:
+    path: "{{ lighthouse_path }}/app.js"
+  ignore_errors: true
+- name: Install lighthouse from git
+  become: true
+  when: lh_exists.state == "absent"
+  ansible.builtin.git:
+    repo: https://github.com/VKCOM/lighthouse.git
+    version: master
+    dest: "{{ lighthouse_path }}"
+- name: Change lighthouse host default
+  when: lh_exists.state == "absent"
+  ansible.builtin.replace:
+    path: "{{ lighthouse_path }}/app.js"
+    regexp: '127\.0\.0\.1:8123\/'
+    replace: "{{ hostvars['clickhouse-01'].ansible_host }}:8123/?user=vector&password={{ vector_password }}"
+    unsafe_writes: true
+  notify: restart Nginx
+- name: Create lighthouse config
+  become: true
+  ansible.builtin.template:
+    src: lighthouse.conf.j2
+    dest: /etc/nginx/conf.d/lighthouse.conf
+    mode: "0644"
+  notify: restart Nginx
+- name: Print ip addres to connect
+  ansible.builtin.debug:
+    msg: "Lighthouse is available at http://{{ ansible_host }}:{{ lighthouse_port }}/"
